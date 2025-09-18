@@ -1,0 +1,223 @@
+import json  # 导入JSON模块，储存信息
+import os  # 导入OS模块，用于操作系统交互
+# 检查当前目录下，是否存在用户信息存储的文件
+if os.path.exists("Accounts.json"):
+# 如果存在，则打开并读取且只读取
+    with open("Accounts.json","r") as f:
+        Accounts = json.load(f)
+# 若不存在，则打开并写入信息,创建个字典储存
+else:
+    Accounts = {}
+# 初始化，当前无用户登录
+present_user = None
+# 创建一个函数，用于保存数据，并用异常预防bug 使用JSON模块
+def save_Accounts():
+    try:
+        with open ("Accounts.json","w") as f:
+            # 将字典Accounts以json格式写入文件f里
+            json.dump(Accounts,f)
+            print("数据保存成功")
+    except Exception as e:
+        print(f"数据保存失败，{e}")
+# 创建函数，用于用户注册账户,依旧添加异常，用JSON模块
+def Register():
+    print("\n----用户注册----")
+# 创建循环，防止失误导致注册失败退出
+    while True:
+        username = input("请输入用户名(按t退出)：")
+        if username == "t":
+            break
+# 检查用户名是否存在
+        elif username in Accounts:
+            print("用户名已存在，请重新输入")
+            continue
+        else :
+            User_password = input("请输入密码：")
+            Again_password = input("请再次输入密码：")
+            if User_password != Again_password:
+                print("两次密码不一致，请重新输入！")
+                continue
+# 创建账户，将用户名当作字典的键，并对其赋值
+            Accounts[username] = {
+                "user_password": User_password,
+                "balance":00.00,
+                "Transaction": []
+            }
+# 调用保存函数，保存信息
+            save_Accounts()
+            print("恭喜您注册成功！")
+            return True  # 终止，返回Turn表示注册成功
+# 创建函数，登录功能
+def Login():
+    global present_user
+    print("\n----用户登录----")
+    while True:
+        username = input("请输入用户名(按t退出):")
+        if username == "t":
+            return
+        elif username not in Accounts:
+            print("用户名不存在")
+            continue  # 跳过这次循环，并重新输入用户名
+        else:
+            password = input("请输入密码：")
+            if Accounts[username]["user_password"]==password:
+                present_user = username
+                print("登录成功，欢迎您！")
+                return True
+            else:
+                print("密码错误，请重新输入：")
+                continue
+# 创建函数，实现修改密码的功能
+def modify_password():
+    global Accounts
+    while True:
+        old_password = input("请输入原密码：")
+        if old_password != Accounts[present_user]["user_password"]:
+            print("密码错误，请重新输入")
+            return
+        else:
+            new_password = input("请输入新密码：")
+            again_password = input("请再次输入新密码：")
+            if new_password != again_password:
+                print("两次密码不一致，请重新输入")
+                return
+            else:
+                Accounts[present_user]["user_password"]=new_password
+                print("密码更改成功")
+        return
+# 创建函数，查询余额
+def enquiry_balance():
+    print("\n----余额查询----")
+    balance = Accounts[present_user]["balance"] # 从字典里获取余额，并赋值给balance
+    print(f"您的余额为{balance:.2f}元")
+# 创建函数，存钱
+def save_money(money):
+
+    if money <= 0 :
+        print("存款金额必须大于零")
+        return
+    Accounts[present_user]["balance"] += money
+    Accounts[present_user]["Transaction"].append(f"存款+{money:.2f}元") #追加一条交易记录的数据
+    print("\n----存款----")
+    print("存入{:.2f}元成功".format(money))
+    enquiry_balance()
+# 创建函数，取钱
+def draw_money(money):
+    balance = Accounts[present_user]["balance"]
+    if money <= 0 :
+        print("取款金额必须大于零")
+        return
+    elif money > balance:
+        print("余额不足")
+        return
+    else:
+        Accounts[present_user]["balance"] -= money
+        print("\n----取款----")
+        print("取款{:.2f}元成功".format(money))
+        Accounts[present_user]["transaction"].append("取出{:.2f}元".format(money))  # 追加一条交易记录的数据
+        enquiry_balance()
+# 创建函数，转账
+def transfer_money(money):
+    counterparty_Account = input("请输入对方账户名：")
+    if counterparty_Account not in Accounts:
+        print("该账户不存在")
+        return
+    else:
+        again_Account = input("请再次输入对方账户名：")  # 增加一个验证，防止转错账户
+        if counterparty_Account == again_Account:
+            money = float(input("请输入转账金额："))
+            if money <= 0 :
+                print("转账金额必须大于零")
+                return
+            else:
+                Accounts[present_user]["balance"] -= money
+                Accounts[counterparty_Account]["balance"] += money
+    print("\n----转账----")
+    print("转账{:.2f}元成功".format(money))
+    Accounts[present_user]["transaction"].append(f"给{counterparty_Account}转账{money:.2f}元")  # 追加一条交易记录的数据
+    Accounts[counterparty_Account]["transaction"].append(f"{counterparty_Account}余额增加{money:.2f}元")
+    enquiry_balance()
+# 创建函数，显示交易记录
+def show_record():
+    print("\n----交易记录----")
+    transactions = Accounts[present_user]["Transaction"]
+    if not transactions :
+        print("暂无交易记录")
+        return
+    else:
+        for i,t in enumerate(transactions,1):
+            print("{}，{}元".format(i,t))
+    balance = Accounts[present_user]["balance"]
+    print("当前余额{:.2f}元".format(balance))
+# 创建函数，主菜单
+def main_menu():
+    print("\n====欢迎光临====")
+    print("请选择操作\n"
+          "1.登录\n"
+          "2.注册\n"
+          "3.退出")
+    return input("请选择你的操作：")
+# 创建函数，用户菜单
+def user_menu():
+    print("\n====用户操作====")
+    print("1.取款\n"
+          "2.存款\n"
+          "3.查询余额\n"
+          "4.查询交易记录\n"
+          "5.转账\n"
+          "6.修改密码\n"
+          "7.退出")
+    return input("请输入你的选择：")
+# 创建函数，主系统
+def main_system():
+    print("\n====欢迎使用三七的ATM系统====")
+    while True:
+        global present_user
+        if not present_user:
+            choose = main_menu()
+            if choose == "1":
+                Login()
+            elif choose == "2":
+                Register()
+            elif choose == "3":
+                print("感谢你的使用")
+                break
+            else:
+                print("无效选择，请重试")
+            continue
+        try:
+            choose = user_menu()
+            if choose == "1":
+                try:
+                    money = float(input("请输入取款金额："))
+                    draw_money(money)
+                except ValueError:
+                    print("请输入有效数字：")
+            elif choose == "2":
+                try:
+                    money = float(input("请输入存款金额："))
+                    save_money(money)
+                except ValueError:
+                    print("请输入有效数字：")
+            elif choose == "3":
+                enquiry_balance()
+            elif choose == "4":
+                show_record()
+            elif choose == "5":
+                try:
+                    money = float(input("请输入转账金额："))
+                    transfer_money(money)
+                except ValueError:
+                    print("请输入有效数字：")
+            elif choose == "6":
+                modify_password()
+            elif choose == "7":
+                print("感谢你的使用")
+                present_user = None
+            else:
+                print("无效的选择，请重试")
+        except ValueError as e:
+            print(f"发生错误，{e}")
+if __name__ == "__main__":  # 程序入口 因为大型项目是分很多模块去写的
+    main_system()
+    print("感谢使用三七的ATM系统，欢迎下次光临！")
